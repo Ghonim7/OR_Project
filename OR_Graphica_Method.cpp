@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <windows.h>
+#include <cmath>
 using namespace std;
 
 int getConsoleWidth() {
@@ -37,6 +38,16 @@ struct Point {
     double x, y;
 };
 
+
+bool exists(const vector<Point>& v, Point p) {
+    for (auto& q : v) {
+        if (fabs(q.x - p.x) < 1e-6 && fabs(q.y - p.y) < 1e-6)
+            return true;
+    }
+    return false;
+}
+
+
 bool feasible(double x, double y,
     const vector<vector<double>>& A,
     const vector<double>& b) {
@@ -51,10 +62,12 @@ bool feasible(double x, double y,
 }
 
 int main() {
+
     drawScreen();
     cout << "\n\n";
     centerText("Press ENTER to start...");
     cin.get();
+
     int n;
     cout << "\nEnter number of products: ";
     cin >> n;
@@ -85,6 +98,7 @@ int main() {
             cin >> timeUsed[i][j];
         }
     }
+
     cout << "\n====================================\n";
     cout << "Mathematical Model:\n\n";
 
@@ -118,32 +132,49 @@ int main() {
         cout << "Please use Simplex Method.\n";
     }
     else {
-        vector<Point> candidates;
-        candidates.push_back({ 0, 0 });
 
+        vector<Point> candidates;
+
+        Point origin{ 0,0 };
+        if (!exists(candidates, origin))
+            candidates.push_back(origin);
+
+        
         for (int i = 0; i < m; i++) {
-            if (timeUsed[i][0] != 0)
-                candidates.push_back({ timeAvailable[i] / timeUsed[i][0], 0 });
-            if (timeUsed[i][1] != 0)
-                candidates.push_back({ 0, timeAvailable[i] / timeUsed[i][1] });
+            if (timeUsed[i][0] != 0) {
+                Point p{ timeAvailable[i] / timeUsed[i][0], 0 };
+                if (!exists(candidates, p))
+                    candidates.push_back(p);
+            }
+
+            if (timeUsed[i][1] != 0) {
+                Point p{ 0, timeAvailable[i] / timeUsed[i][1] };
+                if (!exists(candidates, p))
+                    candidates.push_back(p);
+            }
         }
 
+        
         for (int i = 0; i < m; i++) {
             for (int j = i + 1; j < m; j++) {
+
                 double a1 = timeUsed[i][0], b1 = timeUsed[i][1], c1 = timeAvailable[i];
                 double a2 = timeUsed[j][0], b2 = timeUsed[j][1], c2 = timeAvailable[j];
 
                 double det = a1 * b2 - a2 * b1;
-                if (det != 0) {
+                if (fabs(det) > 1e-6) {
                     double x = (c1 * b2 - c2 * b1) / det;
                     double y = (a1 * c2 - a2 * c1) / det;
-                    candidates.push_back({ x, y });
+
+                    Point p{ x, y };
+                    if (!exists(candidates, p))
+                        candidates.push_back(p);
                 }
             }
         }
 
         double maxZ = -1;
-        Point best{ 0, 0 };
+        Point best{ 0,0 };
 
         for (auto& p : candidates) {
             if (feasible(p.x, p.y, timeUsed, timeAvailable)) {
