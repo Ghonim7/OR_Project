@@ -56,7 +56,7 @@ bool feasible(double x, double y,
     if (x < 0 || y < 0) return false;
 
     for (int i = 0; i < b.size(); i++) {
-        if (A[i][0] * x + A[i][1] * y > b[i] + 1e-6)
+        if (A[i][0] * x + A[i][1] * y > b[i])
             return false;
     }
     return true;
